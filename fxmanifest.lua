@@ -8,6 +8,7 @@ version '0.0.1'
 
 dependencies {
 	"/onesync",
+	"baseevents",
 	"ox_core",
 	"ox_lib",
 	"ox_inventory",

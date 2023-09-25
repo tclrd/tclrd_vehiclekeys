@@ -31,9 +31,11 @@ lib.callback.register('vehiclekeys:checkkeys', function(source, data)
 end)
 
 RegisterNetEvent('baseevents:enteringVehicle', function(vehicleId, seatIndex, vehicleDisplayName, vehNetId)
+    print('entering vehicle')
     local playerId = source
     local vehicle = NetworkGetEntityFromNetworkId(vehNetId)
     local vehState = Entity(vehicle).state
+    print(vehState)
     if vehState.locked == nil then
         SetVehicleDoorsLocked(vehicle, 2)
         vehState:set('locked', true)
