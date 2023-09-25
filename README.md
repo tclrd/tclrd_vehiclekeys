@@ -9,7 +9,6 @@
 ## Dependencies
 - [ox-core](https://github.com/overextended/ox_core)
 - [ox-lib](https://github.com/overextended/ox_lib)
-- [baseevents](https://github.com/citizenfx/cfx-server-data/tree/master/resources/%5Bsystem%5D/baseevents)
 
 ## Features
 
@@ -21,6 +20,7 @@
 - Keys managed by entity statebag
 - 0.00ms idle
 
+![resmon screenshot](https://i.imgur.com/SoW0hal.png)
 
 ## Installation
 
@@ -39,12 +39,34 @@ TODO
 
 ## Commands
 
-TODO
+Player commands:
+
 `/givekeys [playerId]` - Give keys to another player
 
-## Exports
+Admin commands:
 
-TODO
+`/setKeys [playerId]` - Set keys for a player
+
+`/checkKeys [playerId]` - Check keys for a player
+
+## Server Exports
+
+### setKeys
+Set keys for a vehicle
+```lua
+---@param vehicleEntity number
+---@param charId number
+exports.tclrd_vehiclekeys:setKeys(vehicleEntity, charId)
+```
+
+### getKeys
+Get keys for a vehicle
+```lua
+---@param vehicleEntity number
+---@param charId number
+exports.tclrd_vehiclekeys:getKeys(vehicleEntity, charId)
+```
+## Client Exports
 
 ### lockpick
 lockpicks nearest vehicle to player
@@ -55,14 +77,13 @@ Recommend usage is adding to ox_inventory item lockpick:
     label = 'Lockpick',
     weight = 160,
     client = {
-        export = 'tclrd_vehiclekeys:lockpick',
+        export = 'tclrd_vehiclekeys.lockpick',
     }
 },
 ```
 Or used standalone:
 ```lua
----@param status boolean
-exports['tclrd-vehiclekeys']:lockpick()
+exports.tclrd_vehiclekeys:lockpick()
 ```
 
 ## License

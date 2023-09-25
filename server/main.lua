@@ -1,4 +1,4 @@
-function has_key(tbl, key)
+function hasKey(tbl, key)
     return type(tbl[key]) ~= "nil" and rawget(tbl, key) ~= nil
 end
 
@@ -8,7 +8,7 @@ function checkKeys(_vehEnt, _target)
     local vehState = Entity(vehEnt).state
     if vehState.keys == nil then return false end
     local vehKeys = vehState.keys
-    if has_key(vehKeys, target) then return true end
+    if hasKey(vehKeys, target) then return true end
     return false
 end
 
@@ -20,7 +20,6 @@ function setKeys(vehEnt, _target)
     local vehKeys = Entity(vehEnt).state.keys
     if vehKeys == nil then vehKeys = {} end
     vehKeys[target] = true
-    print('vehKeys[target]', vehKeys[target])
     Entity(vehEnt).state:set('keys', vehKeys, true)
 end
 
@@ -30,12 +29,9 @@ lib.callback.register('vehiclekeys:checkkeys', function(source, data)
     return checkKeys(vehEnt, target)
 end)
 
-RegisterNetEvent('baseevents:enteringVehicle', function(vehicleId, seatIndex, vehicleDisplayName, vehNetId)
-    print('entering vehicle')
-    local playerId = source
+RegisterNetEvent('vehiclekeys:enteringVehicle', function(vehNetId)
     local vehicle = NetworkGetEntityFromNetworkId(vehNetId)
     local vehState = Entity(vehicle).state
-    print(vehState)
     if vehState.locked == nil then
         SetVehicleDoorsLocked(vehicle, 2)
         vehState:set('locked', true)
@@ -54,7 +50,6 @@ local function giveKeys(_giver, _receiver, _vehNet)
     end
     local giverId = Ox.GetPlayer(_giver).charId
     local receiverId = Ox.GetPlayer(_receiver).charId
-    local hasKeys = checkKeys(vehicle, giverId)
     if not checkKeys(vehicle, giverId) then
         return
     else
@@ -90,10 +85,14 @@ lib.addCommand('setKeys', {
     setKeys(vehicle, target)
 end)
 
-exports('getKeys', function(vehEnt, target)
-    return checkKeys(vehEnt, target)
+---@param vehEnt number
+---@param charId number
+exports('getKeys', function(vehEnt, charId)
+    return checkKeys(vehEnt, charId)
 end)
 
-exports('setKeys', function(vehEnt, target)
-    setKeys(vehEnt, target)
+---@param vehEnt number
+---@param charId number
+exports('setKeys', function(vehEnt, charId)
+    setKeys(vehEnt, charId)
 end)

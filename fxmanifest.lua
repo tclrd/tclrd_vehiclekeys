@@ -4,11 +4,11 @@ game 'gta5'
 lua54 'yes'
 
 description 'vehiclekeys for ox_core'
-version '0.0.1'
+version '0.0.3'
 
 dependencies {
 	"/onesync",
-	"baseevents",
+	-- "baseevents",
 	"ox_core",
 	"ox_lib",
 	"ox_inventory",
@@ -21,6 +21,7 @@ shared_scripts {
 
 client_scripts {
 	'@ox_core/imports/client.lua',
+	'client/utils.lua',
 	'client/main.lua'
 }
 
