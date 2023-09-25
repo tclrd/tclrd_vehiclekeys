@@ -33,7 +33,10 @@ server_scripts {
 -- }
 
 exports {
-	'lockpick',
+	'lockpick'
+}
+
+server_exports {
 	'setKeys',
-	'checkKeys'
+	'getKeys'
 }
