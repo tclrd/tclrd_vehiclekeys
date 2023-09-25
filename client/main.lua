@@ -1,5 +1,5 @@
 -- # States in use:
--- Entity(vehicle).state.keys : {} table of CPlayer.charid as string values
+-- Entity(vehicle).state.keys : {} table of CPlayer.charId as string values
 -- Entity(vehicle).state.engine : type == bool
 -- Entity(vehicle).state.locked : type == bool
 
@@ -18,6 +18,7 @@ end)
 
 lib.callback.register('vehiclekeys:getNearestVehicles', function()
     local vehicles = lib.getNearbyVehicles(coords, maxDistance, includePlayerVehicle)
+    return
 end)
 
 lib.onCache('seat', function(value)
@@ -36,7 +37,7 @@ lib.onCache('seat', function(value)
         local hasKeys = lib.callback.await('vehiclekeys:checkkeys', false,
             { vehicle = cache.vehicle, target = cache.serverId }) -- returns bool
         if not GetIsVehicleEngineRunning(cache.vehicle) then
-            Citizen.CreateThread(function(vehicle)
+            CreateThread(function(vehicle)
                 while GetVehiclePedIsIn(cache.ped) ~= 0 do
                     if value ~= -1 then break end
                     Wait(0)
@@ -122,6 +123,7 @@ function toggleLock()
     local vehState = Entity(vehicle).state
     local vehNet = NetworkGetNetworkIdFromEntity(vehicle)
     local haskeys = lib.callback.await('vehiclekeys:checkkeys', false, { vehicle = vehNet }) -- returns bool
+    print('haskeys', haskeys)
     if GetVehiclePedIsIn(cache.ped, false) ~= 0 or haskeys then
         local lockState
         if vehState.locked == nil then
@@ -154,7 +156,6 @@ lib.addKeybind({
 exports('lockpick', function(data, slot)
     -- Player is attempting to use the item.
     local playerPed = cache.ped
-    local target = lib.callback('vehiclekeys:identifier')
     local vehicle = cache.vehicle or lib.getClosestVehicle(GetEntityCoords(cache.ped), 3, true)
     local hasKeys = lib.callback.await('vehiclekeys:checkkeys', false,
         { vehicle = cache.vehicle, target = cache.serverId }) -- returns bool

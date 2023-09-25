@@ -20,17 +20,14 @@ function setKeys(vehEnt, _target)
     local vehKeys = Entity(vehEnt).state.keys
     if vehKeys == nil then vehKeys = {} end
     vehKeys[target] = true
+    print('vehKeys[target]', vehKeys[target])
     Entity(vehEnt).state:set('keys', vehKeys, true)
 end
 
 lib.callback.register('vehiclekeys:checkkeys', function(source, data)
     local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
-    local target = Ox.GetPlayer(source).charid
+    local target = Ox.GetPlayer(source).charId
     return checkKeys(vehEnt, target)
-end)
-
-lib.callback.register('vehiclekeys:identifier', function()
-    return Ox.GetPlayer(source).charid
 end)
 
 RegisterNetEvent('baseevents:enteringVehicle', function(vehicleId, seatIndex, vehicleDisplayName, vehNetId)
@@ -53,8 +50,8 @@ local function giveKeys(_giver, _receiver, _vehNet)
         TriggerClientEvent('vehiclekeys:notify', _giver, 'Player not found', 'error')
         return
     end
-    local giverId = Ox.GetPlayer(_giver).charid
-    local receiverId = Ox.GetPlayer(_receiver).charid
+    local giverId = Ox.GetPlayer(_giver).charId
+    local receiverId = Ox.GetPlayer(_receiver).charId
     local hasKeys = checkKeys(vehicle, giverId)
     if not checkKeys(vehicle, giverId) then
         return
@@ -65,6 +62,8 @@ local function giveKeys(_giver, _receiver, _vehNet)
         TriggerClientEvent('vehiclekeys:notify', _receiver, message, style)
     end
 end
+
+
 
 lib.addCommand('givekeys', {
     help = 'Give keys to a vehicle to another player',
@@ -85,7 +84,7 @@ lib.addCommand('setKeys', {
 }, function(source, args, raw)
     local vehNet = lib.callback.await('vehiclekeys:getNearestVehicle', source)
     local vehicle = NetworkGetEntityFromNetworkId(vehNet)
-    local target = Ox.GetPlayer(args.target).charid
+    local target = Ox.GetPlayer(args.target).charId
     setKeys(vehicle, target)
 end)
 

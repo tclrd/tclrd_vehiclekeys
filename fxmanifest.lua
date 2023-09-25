@@ -15,8 +15,6 @@ dependencies {
 
 shared_scripts {
 	'@ox_lib/init.lua',
-	'locales/en.lua',
-	'locales/*.lua',
 	'config.lua'
 }
 
@@ -30,9 +28,9 @@ server_scripts {
 	'@ox_core/imports/server.lua',
 	'server/main.lua'
 }
-files {
-	'config.json'
-}
+-- files {
+-- 	'config.json'
+-- }
 
 exports {
 	'lockpick',
