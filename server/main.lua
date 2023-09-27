@@ -23,6 +23,13 @@ function setKeys(vehEnt, _target)
     Entity(vehEnt).state:set('keys', vehKeys, true)
 end
 
+lib.callback.register('vehiclekeys:setkeys', function(source, data)
+    local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
+    local target = Ox.GetPlayer(source).charId
+    print('setting keys')
+    setKeys(vehEnt, target)
+end)
+
 lib.callback.register('vehiclekeys:checkkeys', function(source, data)
     local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
     local target = Ox.GetPlayer(source).charId

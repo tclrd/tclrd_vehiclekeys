@@ -36,21 +36,20 @@ lib.onCache('seat', function(value)
         local vehState = Entity(cache.vehicle).state
         local hasKeys = lib.callback.await('vehiclekeys:checkkeys', false,
             { vehicle = cache.vehicle, target = cache.serverId }) -- returns bool
-        if not GetIsVehicleEngineRunning(cache.vehicle) then
-            CreateThread(function(vehicle)
-                while GetVehiclePedIsIn(cache.ped) ~= 0 do
-                    if value ~= -1 then break end
-                    Wait(0)
-                    if not GetIsVehicleEngineRunning(cache.vehicle) then
-                        if not vehState.engine then
-                            SetVehicleEngineOn(cache.vehicle, false, true, true)
-                        end
-                        lib.disableControls:Add(71) -- # Block Accelerate (71) https://docs.fivem.net/docs/game-references/controls/
-                        lib.disableControls()
+        if GetIsVehicleEngineRunning(cache.vehicle) then return end
+        CreateThread(function(vehicle)
+            while GetVehiclePedIsIn(cache.ped) ~= 0 do
+                if value ~= -1 then break end
+                Wait(0)
+                if not GetIsVehicleEngineRunning(cache.vehicle) then
+                    if vehState?.engine == nil or vehState.engine == false then
+                        SetVehicleEngineOn(cache.vehicle, false, true, true)
                     end
+                    lib.disableControls:Add(71)-- # Block Accelerate (71) https://docs.fivem.net/docs/game-references/controls/
+                    lib.disableControls()
                 end
-            end)
-        end
+            end
+        end)
     end
 end)
 
