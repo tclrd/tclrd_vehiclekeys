@@ -2,6 +2,12 @@
 
 # WIP THIS IS NOT READY FOR PRODUCTION USE
 
+### TODO: 
+Add config for lockpicking settings
+Add config for giving player keys on lockpick/hotwire success
+Refactor lockpicking function for readibility
+Replace PlayCustomSounds dependency with native audio for lock sounds and maybe add ignition sounds
+
 ## Vehicle Lock System for ox_core
 
 🔑 Vehicle locking and lockpicking for ox_core. 🚗
