@@ -7,6 +7,7 @@ Add config for lockpicking settings
 Add config for giving player keys on lockpick/hotwire success
 Refactor lockpicking function for readibility
 Replace PlayCustomSounds dependency with native audio for lock sounds and maybe add ignition sounds
+Replace locked state with lockStatus state to match ox_core naming convention using 0 = unlocked and 1 = locked
 
 ## Vehicle Lock System for ox_core
 

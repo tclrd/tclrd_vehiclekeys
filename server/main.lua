@@ -63,11 +63,13 @@ local function giveKeys(_giver, _receiver, _vehNet)
         setKeys(vehicle, receiverId)
         local message = 'You have been given keys to a vehicle'
         local style = 'success'
-        TriggerClientEvent('vehiclekeys:notify', _receiver, message, style)
+        TriggerClientEvent('ox_lib:notify', _receiver, {
+            title = 'Vehicle Keys',
+            message = message,
+            type = style
+        })
     end
 end
-
-
 
 lib.addCommand('givekeys', {
     help = 'Give keys to a vehicle to another player',

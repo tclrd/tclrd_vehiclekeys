@@ -6,13 +6,21 @@ lua54 'yes'
 description 'vehiclekeys for ox_core'
 version '0.0.3'
 
+
 dependencies {
 	"/onesync",
-	-- "baseevents",
 	"ox_core",
 	"ox_lib",
 	"ox_inventory",
 }
+
+files {
+	'data/doorlock_sounds.dat54.rel',
+	'audiodirectory/custom_sounds.awc',
+}
+
+data_file 'AUDIO_WAVEPACK' 'audiodirectory'
+data_file 'AUDIO_SOUNDDATA' 'data/doorlock_sounds.dat'
 
 shared_scripts {
 	'@ox_lib/init.lua',
