@@ -1,26 +1,58 @@
+local Keys = {}
+
 function hasKey(tbl, key)
     return type(tbl[key]) ~= "nil" and rawget(tbl, key) ~= nil
 end
 
+-- -- Statebag version
+-- function checkKeys(_vehEnt, _target)
+--     local vehEnt = _vehEnt
+--     local target = _target
+--     if target == nil then return end
+--     local vehState = Entity(vehEnt).state
+--     if vehState.keys == nil then return false end
+--     local vehKeys = vehState.keys
+--     if hasKey(vehKeys, target) then return true end
+--     return false
+-- end
+
+-- function setKeys(vehEnt, _target)
+--     local vehicle = vehEnt
+--     local target = _target
+--     if target == nil then return end
+--     local hasKeys = checkKeys(vehicle, target)
+--     if hasKeys then return end
+--     local vehKeys = Entity(vehEnt).state.keys
+--     if vehKeys == nil then vehKeys = {} end
+--     vehKeys[target] = true
+--     Entity(vehEnt).state:set('keys', vehKeys, true)
+-- end
+
+-- Table versions
 function checkKeys(_vehEnt, _target)
-    local vehEnt = _vehEnt
+    local vehNet = NetworkGetNetworkIdFromEntity(_vehEnt)
     local target = _target
-    local vehState = Entity(vehEnt).state
-    if vehState.keys == nil then return false end
-    local vehKeys = vehState.keys
-    if hasKey(vehKeys, target) then return true end
+
+    if Keys[vehNet] == nil then return false end
+
+    local vehKeys = Keys[vehNet]
+    if hasKey(vehKeys, 'player:' .. target) then return true end
     return false
 end
 
 function setKeys(vehEnt, _target)
-    local vehicle = vehEnt
+    local vehicle = NetworkGetNetworkIdFromEntity(vehEnt)
     local target = _target
-    local hasKeys = checkKeys(vehicle, target)
+
+    local hasKeys = checkKeys(_venEnt, target)
     if hasKeys then return end
-    local vehKeys = Entity(vehEnt).state.keys
+    local vehKeys = Keys[vehicle]
     if vehKeys == nil then vehKeys = {} end
-    vehKeys[target] = true
-    Entity(vehEnt).state:set('keys', vehKeys, true)
+    vehKeys['player:' .. target] = true
+
+    -- Entity(vehEnt).state:set('keys', vehKeys, true)
+
+    Keys[vehicle] = vehKeys
 end
 
 lib.callback.register('vehiclekeys:setkeys', function(source, data)
@@ -33,7 +65,18 @@ end)
 lib.callback.register('vehiclekeys:checkkeys', function(source, data)
     local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
     local target = Ox.GetPlayer(source).charId
-    return checkKeys(vehEnt, target)
+    local keys = checkKeys(vehEnt, target)
+    return keys
+end)
+
+lib.callback.register('vehiclekeys:setstate', function(source, data)
+    local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
+    local vehState = Entity(vehEnt).state
+    local state = data.state
+    local value = data.value
+    print(state, value)
+    vehState:set('locked', data.state, true)
+    return true
 end)
 
 RegisterNetEvent('vehiclekeys:enteringVehicle', function(vehNetId)

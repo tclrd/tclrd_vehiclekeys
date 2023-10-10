@@ -14,7 +14,7 @@ lib.callback.register('vehiclekeys:getNearestVehicles', function()
 end)
 
 lib.onCache('seat', function(value)
-    if not value then -- Check for false = exiting vehicle
+    if value == false then -- Check for false = exiting vehicle
         -- Exiting vehicle, checking engine state
         local prevVeh = GetVehiclePedIsIn(cache.ped, true)
         if Entity(prevVeh).state.engine then
@@ -81,41 +81,13 @@ lib.addKeybind({
     end,
 })
 
----Applys audio and visual effects to the vehicle lock toggle
----@param _state boolean
----@param _vehNet number
-function lockingEffectOld(_state, _vehNet)
-    lib.requestAnimDict("anim@mp_player_intmenu@key_fob@")
-    local state = _state or false
-    local vehNet = _vehNet
-    local vehicle = NetworkGetEntityFromNetworkId(vehNet)
-
-    local sound = 'lock'
-    if state == false then sound = 'unlock' end
-    TriggerServerEvent('Server:SoundToRadius', vehNet, 10, sound, 1)
-    if state then
-        -- car is unlocked
-        SetVehicleLights(vehicle, 2)
-        Wait(250)
-        SetVehicleLights(vehicle, 1)
-        Wait(200)
-    end
-    SetVehicleLights(vehicle, 2)
-    Wait(250)
-    SetVehicleLights(vehicle, 1)
-    Wait(200)
-    SetVehicleLights(vehicle, 0)
-    Wait(300)
-end
 
 ---Applys audio and visual effects to the vehicle lock toggle
 ---@param _state boolean
 ---@param _vehNet number
-function lockingEffect(_state, _vehNet)
+function lockingEffect(_state, vehicle)
     lib.requestAnimDict("anim@mp_player_intmenu@key_fob@")
     local state = _state or false
-    local vehNet = _vehNet
-    local vehicle = NetworkGetEntityFromNetworkId(vehNet)
 
     local sound = 'lock'
     if state == false then sound = 'unlock' end
@@ -126,7 +98,7 @@ function lockingEffect(_state, _vehNet)
         sound,
         vehicle,
         'lock_soundset',
-        true,
+        false,
         false
     )
 
@@ -137,13 +109,14 @@ function lockingEffect(_state, _vehNet)
         Wait(250)
         SetVehicleLights(vehicle, 1)
         Wait(200)
+    else
+        SetVehicleLights(vehicle, 2)
+        Wait(250)
+        SetVehicleLights(vehicle, 1)
+        Wait(200)
+        SetVehicleLights(vehicle, 0)
+        Wait(300)
     end
-    SetVehicleLights(vehicle, 2)
-    Wait(250)
-    SetVehicleLights(vehicle, 1)
-    Wait(200)
-    SetVehicleLights(vehicle, 0)
-    Wait(300)
     ReleaseNamedScriptAudioBank('audiodirectory/custom_sounds')
 end
 
@@ -153,15 +126,20 @@ function toggleLock()
     local vehNet = NetworkGetNetworkIdFromEntity(vehicle)
     if NetworkGetEntityOwner(vehicle) == -1 then NetworkRequestControlOfEntity(vehicle) end
     local haskeys = lib.callback.await('vehiclekeys:checkkeys', false, { vehicle = vehNet }) -- returns bool
+    print('has keys', haskeys)
     if cache.seat == -1 or cache.seat == 0 or haskeys then
+        local state = nil
         if vehState.locked == nil then
-            vehState:set('locked', true, true)
+            -- vehState:set('locked', true, true)
+            state = true
         elseif vehState.locked == true then
-            vehState:set('locked', false, true)
+            -- vehState:set('locked', false, true)
+            state = false
         else
-            vehState:set('locked', true, true)
+            -- vehState:set('locked', true, true)
+            state = true
         end
-
+        lib.callback.await('vehiclekeys:setstate', false, { vehicle = vehNet, state = state, value = vehState.locked })
         if not cache.vehicle then
             TaskPlayAnim(cache.ped, 'anim@mp_player_intmenu@key_fob@', 'fob_click', 3.0, 3.0, -1, 49, 0, false, false,
                 false)
@@ -274,25 +252,30 @@ exports('lockpick', function(data, slot)
 end)
 
 AddStateBagChangeHandler('locked', nil, function(bagName, key, value, _unused, replicated)
-    if replicated then return end
-
-    local vehNet = tonumber(bagName:gsub('entity:', ''), integer)
-    local vehicle = NetToVeh(vehNet)
+    -- if replicated then return end
+    if replicated == true then return end
+    local vehicle = GetEntityFromStateBagName(bagName)
+    -- if GetVehicleDoorLockStatus(vehicle) == 2 and value == true then return end
+    -- if GetVehicleDoorLockStatus(vehicle) == 1 and value == false then return end
 
     if NetworkGetEntityOwner(vehicle) == cache.playerId then
-        if value then
+        if value == true then
             SetVehicleDoorsLocked(vehicle, 2)
         else
             SetVehicleDoorsLocked(vehicle, 1)
         end
     end
-    lockingEffect(value, vehNet)
+
+    lockingEffect(value, vehicle)
 end)
 
 AddStateBagChangeHandler('engine', nil, function(bagName, key, value, _unused, replicated)
     if not replicated then return end
-    local vehNet = bagName:gsub('entity:', '')
-    vehNet = tonumber(vehNet)
-    local vehicle = NetToVeh(vehNet)
+    local vehicle = GetEntityFromStateBagName(bagName)
+
+    if not DoesEntityExist(vehicle) then return end
+
+    local engineRunning = GetIsVehicleEngineRunning(vehicle) == 1
+    if engineRunning == value then return end
     SetVehicleEngineOn(vehicle, value, false, true)
 end)
