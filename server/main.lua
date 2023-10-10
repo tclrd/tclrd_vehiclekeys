@@ -64,7 +64,7 @@ function setKeys(vehEnt, _target)
     local vehicle = NetworkGetNetworkIdFromEntity(vehEnt)
     local target = _target
 
-    local hasKeys = checkKeys(vehicle, target)
+    local hasKeys = checkKeys(vehEnt, target)
     if hasKeys then return end
     local vehKeys = Keys[vehicle]
     if vehKeys == nil then vehKeys = {} end

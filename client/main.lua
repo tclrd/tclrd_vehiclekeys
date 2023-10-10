@@ -122,7 +122,7 @@ end
 
 function toggleLock()
     local vehicle = lib.getClosestVehicle(GetEntityCoords(cache.ped), 5, true)
-    local vehState = Entity(vehicle).state
+    local vehState = Entity(vehicle)?.state
     local vehNet = NetworkGetNetworkIdFromEntity(vehicle)
     if NetworkGetEntityOwner(vehicle) == -1 then NetworkRequestControlOfEntity(vehicle) end
     local haskeys = lib.callback.await('vehiclekeys:checkkeys', false, { vehicle = vehNet }) -- returns bool
