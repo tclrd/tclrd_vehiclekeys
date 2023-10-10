@@ -56,7 +56,8 @@ function checkKeys(_vehEnt, _target)
     if Keys[vehNet] == nil then return false end
 
     local vehKeys = Keys[vehNet]
-    if hasKey(vehKeys, 'player:' .. target) then return true end
+    local hasKeys = hasKey(vehKeys, 'player:' .. target)
+    if hasKeys then return true end
     return false
 end
 
@@ -86,6 +87,16 @@ lib.callback.register('vehiclekeys:checkkeys', function(source, data)
     local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
     local target = Ox.GetPlayer(source).charId
     local keys = checkKeys(vehEnt, target)
+    print('---------Start-Key-Debug---------')
+    print('')
+    print('Player:' ..
+        target ..
+        ' | vehicle:' ..
+        data.vehicle .. ' | plate:' .. GetVehicleNumberPlateText(vehEnt) .. ' | keys:' .. tostring(keys))
+    print('')
+    print('vehicle:' .. data.vehicle .. ' keys:', json.encode(Keys[data.vehicle], { indent = true }))
+    print('')
+    print('----------End-Key-Debug----------')
     return keys
 end)
 

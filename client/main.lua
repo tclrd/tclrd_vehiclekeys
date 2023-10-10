@@ -126,7 +126,10 @@ function toggleLock()
     local vehNet = NetworkGetNetworkIdFromEntity(vehicle)
     if NetworkGetEntityOwner(vehicle) == -1 then NetworkRequestControlOfEntity(vehicle) end
     local haskeys = lib.callback.await('vehiclekeys:checkkeys', false, { vehicle = vehNet }) -- returns bool
-    print('has keys', haskeys)
+    print('Player:' ..
+        player.charId ..
+        ' | vehicle:' .. vehNet .. ' | plate:' .. GetVehicleNumberPlateText(vehicle) .. ' | keys:' .. tostring(haskeys))
+
     if cache.seat == -1 or cache.seat == 0 or haskeys then
         local state = nil
         if vehState.locked == nil then
