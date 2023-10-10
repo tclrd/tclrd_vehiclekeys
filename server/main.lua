@@ -29,6 +29,26 @@ end
 -- end
 
 -- Table versions
+function wipeKeys(vehEnt)
+    local vehicle = NetworkGetNetworkIdFromEntity(vehEnt)
+    if Keys[vehicle] == nil then return end
+    Keys[vehicle] = nil
+end
+
+function removeKeys(vehEnt, _target)
+    local vehicle = NetworkGetNetworkIdFromEntity(vehEnt)
+    local target = _target
+    if target == nil then return end
+    local vehKeys = Keys[vehicle]
+    if vehKeys == nil then return end
+    vehKeys['player:' .. target] = nil
+    if vehKeys == {} then
+        wipeKeys(vehEnt)
+    else
+        Keys[vehicle] = vehKeys
+    end
+end
+
 function checkKeys(_vehEnt, _target)
     local vehNet = NetworkGetNetworkIdFromEntity(_vehEnt)
     local target = _target
@@ -44,7 +64,7 @@ function setKeys(vehEnt, _target)
     local vehicle = NetworkGetNetworkIdFromEntity(vehEnt)
     local target = _target
 
-    local hasKeys = checkKeys(_venEnt, target)
+    local hasKeys = checkKeys(vehicle, target)
     if hasKeys then return end
     local vehKeys = Keys[vehicle]
     if vehKeys == nil then vehKeys = {} end
@@ -147,4 +167,13 @@ end)
 ---@param charId number
 exports('setKeys', function(vehEnt, charId)
     setKeys(vehEnt, charId)
+end)
+
+
+exports('removeKeys', function(vehEnt, charId)
+    removeKeys(vehEnt, charId)
+end)
+
+exports('wipeKeys', function(vehEnt)
+    wipeKeys(vehEnt)
 end)

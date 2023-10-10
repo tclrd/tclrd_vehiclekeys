@@ -59,7 +59,7 @@ Admin commands:
 ## Server Exports
 
 ### setKeys
-Set keys for a vehicle
+Set keys for provided chahrId to a vehicle
 ```lua
 ---@param vehicleEntity number
 ---@param charId number
@@ -67,11 +67,26 @@ exports.tclrd_vehiclekeys:setKeys(vehicleEntity, charId)
 ```
 
 ### getKeys
-Get keys for a vehicle
+Check if provided charId has keys to a vehicle
 ```lua
 ---@param vehicleEntity number
 ---@param charId number
 exports.tclrd_vehiclekeys:getKeys(vehicleEntity, charId)
+```
+### removeKeys
+Remove keys for provided charId from a vehicle, wipes if no keys remain after removal
+
+```lua
+---@param vehicleEntity number
+---@param charId number
+exports.tclrd_vehiclekeys:removeKeys(vehicleEntity, charId)
+```
+### wipeKeys
+Wipe keys for a provided vehicle
+
+```lua
+---@param vehicleEntity number
+exports.tclrd_vehiclekeys:wipeKeys(vehicleEntity)
 ```
 ## Client Exports
 

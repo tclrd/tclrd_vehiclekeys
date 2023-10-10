@@ -48,5 +48,7 @@ exports {
 
 server_exports {
 	'setKeys',
-	'getKeys'
+	'getKeys',
+	'removeKeys',
+	'wipeKeys'
 }
