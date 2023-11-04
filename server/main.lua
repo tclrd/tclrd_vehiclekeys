@@ -1,116 +1,150 @@
+---@diagnostic disable: undefined-doc-name
 local Keys = {}
+Keys.List = {}
 
-function hasKey(tbl, key)
+---@param tbl table
+---@param key string
+function Keys:HasKey(tbl, key)
     return type(tbl[key]) ~= "nil" and rawget(tbl, key) ~= nil
 end
 
--- -- Statebag version
--- function checkKeys(_vehEnt, _target)
---     local vehEnt = _vehEnt
---     local target = _target
---     if target == nil then return end
---     local vehState = Entity(vehEnt).state
---     if vehState.keys == nil then return false end
---     local vehKeys = vehState.keys
---     if hasKey(vehKeys, target) then return true end
---     return false
--- end
+---@param vehNet number
+function Keys:InitLocks(vehNet)
+    if not vehNet then return end
 
--- function setKeys(vehEnt, _target)
---     local vehicle = vehEnt
---     local target = _target
---     if target == nil then return end
---     local hasKeys = checkKeys(vehicle, target)
---     if hasKeys then return end
---     local vehKeys = Entity(vehEnt).state.keys
---     if vehKeys == nil then vehKeys = {} end
---     vehKeys[target] = true
---     Entity(vehEnt).state:set('keys', vehKeys, true)
--- end
+    local vehicle = NetworkGetEntityFromNetworkId(vehNet)
+    local vehState = Entity(vehicle).state
 
--- Table versions
-function wipeKeys(vehEnt)
-    local vehicle = NetworkGetNetworkIdFromEntity(vehEnt)
-    if Keys[vehicle] == nil then return end
-    Keys[vehicle] = nil
-end
-
-function removeKeys(vehEnt, _target)
-    local vehicle = NetworkGetNetworkIdFromEntity(vehEnt)
-    local target = _target
-    if target == nil then return end
-    local vehKeys = Keys[vehicle]
-    if vehKeys == nil then return end
-    vehKeys['player:' .. target] = nil
-    if vehKeys == {} then
-        wipeKeys(vehEnt)
-    else
-        Keys[vehicle] = vehKeys
+    if vehState.locked == nil then
+        vehState:set('locked', true)
     end
 end
 
-function checkKeys(_vehEnt, _target)
-    local vehNet = NetworkGetNetworkIdFromEntity(_vehEnt)
-    local target = _target
+---@param vehNet number
+---@param state boolean
+function Keys:SetLocks(vehNet, state)
+    local vehicle = NetworkGetEntityFromNetworkId(vehNet)
+    local vehState = Entity(vehicle).state
 
-    if Keys[vehNet] == nil then return false end
+    vehState.locked = state
+end
 
-    local vehKeys = Keys[vehNet]
-    local hasKeys = hasKey(vehKeys, 'player:' .. target)
-    if hasKeys then return true end
+---@param vehNet number
+---@param target charId
+---@param wipe? boolean
+function Keys:RemoveKeys(vehNet, target, wipe)
+    if vehNet == nil or (target == nil and not wipe) then
+        error('Keys:RemoveKeys: vehNet or target missing', 1)
+        return
+    end
+
+    local keys = self.List[vehNet]
+    if keys == nil then return end
+
+    if wipe == nil then keys['player:' .. target] = nil end
+
+    if wipe or keys == {} then keys = nil end
+end
+
+---@param vehNet number
+---@param target number
+function Keys:CheckKeys(vehNet, target)
+    if self.List[vehNet] == nil then return false end
+
+    local keys = self.List[vehNet]
+    local authd = self:HasKey(keys, 'player:' .. target)
+
+    if authd then return true end
     return false
 end
 
-function setKeys(vehEnt, _target)
-    local vehicle = NetworkGetNetworkIdFromEntity(vehEnt)
-    local target = _target
+---@param vehNet number
+---@param target number
+function Keys:SetKeys(vehNet, target)
+    if not vehNet or not target then return end
 
-    local hasKeys = checkKeys(vehEnt, target)
-    if hasKeys then return end
-    local vehKeys = Keys[vehicle]
-    if vehKeys == nil then vehKeys = {} end
-    vehKeys['player:' .. target] = true
+    local authd = self:CheckKeys(vehNet, target)
+    if authd then return end
+
+    local keys = Keys.List[vehNet]
+    if keys == nil then keys = {} end
+    keys['player:' .. target] = true
 
     -- Entity(vehEnt).state:set('keys', vehKeys, true)
-
-    Keys[vehicle] = vehKeys
+    Keys.List[vehNet] = keys
 end
 
-lib.callback.register('vehiclekeys:setkeys', function(source, data)
-    local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
-    local target = Ox.GetPlayer(source).charId
-    print('setting keys')
-    setKeys(vehEnt, target)
-end)
-
-lib.callback.register('vehiclekeys:checkkeys', function(source, data)
-    local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
-    local target = Ox.GetPlayer(source).charId
-    local keys = checkKeys(vehEnt, target)
-    print('---------Start-Key-Debug---------')
-    print('')
-    print('Player:' ..
-        target ..
-        ' | vehicle:' ..
-        data.vehicle .. ' | plate:' .. GetVehicleNumberPlateText(vehEnt) .. ' | keys:' .. tostring(keys))
-    print('')
-    print('vehicle:' .. data.vehicle .. ' keys:', json.encode(Keys[data.vehicle], { indent = true }))
-    print('')
-    print('----------End-Key-Debug----------')
-    return keys
-end)
-
-lib.callback.register('vehiclekeys:setstate', function(source, data)
-    local vehEnt = NetworkGetEntityFromNetworkId(data.vehicle)
+---@param vehNet number
+function Keys:LockPick(vehNet)
+    if not vehNet then return end
+    local vehEnt = NetworkGetEntityFromNetworkId(vehNet)
     local vehState = Entity(vehEnt).state
-    local state = data.state
-    local value = data.value
-    print(state, value)
-    vehState:set('locked', data.state, true)
+
+    if vehState.locked == nil then vehState.locked = true end
+
+    -- lockpick door
+    --if callback some skillchecks (start car alarm) then
+end
+
+lib.callback.register('vehicle_keys:setLockedState', function(source, seat)
+    if seat == nil then
+        error('vehicle_keys:setLockedState: seat missing', 1)
+        return false
+    end
+
+    local player = Ox.GetPlayer(source)
+    if not player then return false end
+
+    local vehNet = lib.callback.await('vehicle_keys:getClosestVehicle', source, player.getCoords())
+    if not vehNet then
+        TriggerClientEvent('ox_lib:notify', source, {
+            id = 'vehicle_keys:notfound',
+            description = "Cannot find vehicle",
+            type = 'error'
+        })
+        return false
+    end
+
+
+    local authd = false
+    if seat ~= false and seat <= 0 then
+        authd = true
+    end
+    if seat == false then
+        authd = Keys:CheckKeys(vehNet, player.charId)
+    end
+
+    if not authd then
+        if seat ~= false and seat > 0 then
+            TriggerClientEvent('ox_lib:notify', source, {
+                id = 'vehicle_keys:cantreach',
+                description = "Cannot reach locks",
+                type = 'error'
+            })
+            return false
+        end
+        TriggerClientEvent('ox_lib:notify', source, {
+            id = 'vehicle_keys:nokeys',
+            description = "You need keys to unlock this vehicle",
+            type = 'inform'
+        })
+        return false
+    end
+
+    local vehEnt = NetworkGetEntityFromNetworkId(vehNet)
+    local vehState = Entity(vehEnt).state
+    vehState:set('locked', not vehState.locked, true)
+
+    CreateThread(function()
+        Wait(250)
+        local owner = NetworkGetEntityOwner(vehEnt)
+        TriggerClientEvent('vehicle_keys:lockingEffect', owner, vehNet)
+    end)
+
     return true
 end)
 
-RegisterNetEvent('vehiclekeys:enteringVehicle', function(vehNetId)
+RegisterNetEvent('vehicle_keys:enteringVehicle', function(vehNetId)
     local vehicle = NetworkGetEntityFromNetworkId(vehNetId)
     local vehState = Entity(vehicle).state
     if vehState.locked == nil then
@@ -123,7 +157,7 @@ RegisterNetEvent('vehiclekeys:enteringVehicle', function(vehNetId)
     end
 end)
 
-local function giveKeys(_giver, _receiver, _vehNet)
+function Keys:GiveKeys(giver, receiver, vehNet)
     local vehicle = NetworkGetEntityFromNetworkId(_vehNet)
     if not Ox.GetPlayer(_receiver) then
         TriggerClientEvent('vehiclekeys:notify', _giver, 'Player not found', 'error')
@@ -145,14 +179,14 @@ local function giveKeys(_giver, _receiver, _vehNet)
     end
 end
 
-lib.addCommand('givekeys', {
+lib.addCommand({ 'givekeys', 'gk' }, {
     help = 'Give keys to a vehicle to another player',
     params = {
         { name = 'target', help = 'The target player id', type = 'number', optional = false }
     }
 }, function(source, args, raw)
-    local vehNet = lib.callback.await('vehiclekeys:getNearestVehicle', source)
-    giveKeys(source, args.target, vehNet)
+    local vehNet = lib.callback.await('vehicle_keys:getNearestVehicle', source)
+    Keys:GiveKeys(source, args.target, vehNet)
 end)
 
 lib.addCommand('setKeys', {
@@ -162,29 +196,36 @@ lib.addCommand('setKeys', {
     },
     restricted = 'group.admin',
 }, function(source, args, raw)
-    local vehNet = lib.callback.await('vehiclekeys:getNearestVehicle', source)
-    local vehicle = NetworkGetEntityFromNetworkId(vehNet)
-    local target = Ox.GetPlayer(args.target).charId
-    setKeys(vehicle, target)
+    local target = Ox.GetPlayer(args.target)
+    if target == nil then
+        error('player ' .. args.target .. 'not found', 1)
+        return
+    end
+    local vehNet = lib.callback.await('vehicle_keys:getClosestVehicle', source, target.getCoords())
+
+    Keys:SetKeys(vehNet, target.charId)
 end)
 
----@param vehEnt number
+---@param vehNet number
+---@param target charId
+exports('getKeys', function(vehNet, target)
+    return Keys:CheckKeys(vehNet, target)
+end)
+
+---@param vehNet number
 ---@param charId number
-exports('getKeys', function(vehEnt, charId)
-    return checkKeys(vehEnt, charId)
+exports('setKeys', function(vehNet, charId)
+    return Keys:SetKeys(vehNet, charId)
 end)
 
----@param vehEnt number
+---@param vehNet number
 ---@param charId number
-exports('setKeys', function(vehEnt, charId)
-    setKeys(vehEnt, charId)
+exports('removeKeys', function(vehNet, charId)
+    return Keys:RemoveKeys(vehNet, charId, false)
 end)
 
-
-exports('removeKeys', function(vehEnt, charId)
-    removeKeys(vehEnt, charId)
-end)
-
-exports('wipeKeys', function(vehEnt)
-    wipeKeys(vehEnt)
+---@param vehNet number
+---@param charId number
+exports('wipeKeys', function(vehNet)
+    return Keys:RemoveKeys(vehNet, nil, true)
 end)
