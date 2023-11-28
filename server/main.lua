@@ -49,9 +49,12 @@ end
 ---@param vehNet number
 ---@param target number
 function Keys:CheckKeys(vehNet, target)
+    -- print('Keys:CheckKeys - Keys.List', Keys.List[vehNet])
+    print('Keys.List[' .. vehNet .. ']:', json.encode(Keys.List[vehNet], { indent = true }))
     if self.List[vehNet] == nil then return false end
 
     local keys = self.List[vehNet]
+    -- print('Keys:' .. vehNet, json.encode(keys, { indent = true }))
     local authd = self:HasKey(keys, 'player:' .. target)
 
     if authd then return true end
@@ -69,7 +72,7 @@ function Keys:SetKeys(vehNet, target)
     local keys = Keys.List[vehNet]
     if keys == nil then keys = {} end
     keys['player:' .. target] = true
-
+    -- print('keys2', json.encode(keys, { indent = true }))
     -- Entity(vehEnt).state:set('keys', vehKeys, true)
     Keys.List[vehNet] = keys
 end
@@ -95,7 +98,7 @@ lib.callback.register('vehicle_keys:setLockedState', function(source, seat)
     local player = Ox.GetPlayer(source)
     if not player then return false end
 
-    local vehNet = lib.callback.await('vehicle_keys:getClosestVehicle', source, player.getCoords())
+    local vehNet = lib.callback.await('vehicle_keys:getClosestVehicle', source, player.getCoords(), 5.0, true)
     if not vehNet then
         TriggerClientEvent('ox_lib:notify', source, {
             id = 'vehicle_keys:notfound',
@@ -105,11 +108,11 @@ lib.callback.register('vehicle_keys:setLockedState', function(source, seat)
         return false
     end
 
-
     local authd = false
     if seat ~= false and seat <= 0 then
         authd = true
     end
+
     if seat == false then
         authd = Keys:CheckKeys(vehNet, player.charId)
     end
@@ -158,45 +161,58 @@ RegisterNetEvent('vehicle_keys:enteringVehicle', function(vehNetId)
 end)
 
 function Keys:GiveKeys(giver, receiver, vehNet)
-    local vehicle = NetworkGetEntityFromNetworkId(_vehNet)
-    if not Ox.GetPlayer(_receiver) then
-        TriggerClientEvent('vehiclekeys:notify', _giver, 'Player not found', 'error')
+    if not Ox.GetPlayer(receiver) then
+        TriggerClientEvent('vehiclekeys:notify', giver, 'Player not found', 'error')
         return
     end
-    local giverId = Ox.GetPlayer(_giver).charId
-    local receiverId = Ox.GetPlayer(_receiver).charId
-    if not checkKeys(vehicle, giverId) then
+    local giverId = Ox.GetPlayer(giver)?.charId
+    local receiverId = Ox.GetPlayer(receiver)?.charId
+    print('giver', giverId, 'receiver', receiverId, self:CheckKeys(vehNet, giverId))
+    if not self:CheckKeys(vehNet, giverId) then
+        TriggerClientEvent('ox_lib:notify', giver, {
+            description = 'You do not have keys to this vehicle',
+            type = 'error'
+        })
         return
     else
-        setKeys(vehicle, receiverId)
-        local message = 'You have been given keys to a vehicle'
-        local style = 'success'
-        TriggerClientEvent('ox_lib:notify', _receiver, {
-            title = 'Vehicle Keys',
-            message = message,
-            type = style
+        self:SetKeys(vehNet, receiverId)
+        TriggerClientEvent('ox_lib:notify', receiver, {
+            description = 'You have been given keys to a vehicle',
+            type = 'success'
         })
     end
 end
 
 lib.addCommand({ 'givekeys', 'gk' }, {
-    help = 'Give keys to a vehicle to another player',
+    help = 'Give vehicle keys to another player',
     params = {
-        { name = 'target', help = 'The target player id', type = 'number', optional = false }
+        { name = 'target', help = 'The target player id', type = 'number', optional = true }
     }
 }, function(source, args, raw)
-    local vehNet = lib.callback.await('vehicle_keys:getNearestVehicle', source)
-    Keys:GiveKeys(source, args.target, vehNet)
+    local player = Ox.GetPlayer(source)
+    if player == nil then return end
+
+    local vehNet = lib.callback.await('vehicle_keys:getClosestVehicle', source, player.getCoords(), 5.0, true)
+    local target = args.target or lib.callback.await('vehicle_keys:getClosestPlayer', source, player.getCoords(), 5.0)
+    
+    if target == nil then
+        TriggerClientEvent('ox_lib:notify', source, {
+            description = 'No player found',
+            type = 'error'
+        })
+        return
+    end
+    Keys:GiveKeys(source, target, vehNet)
 end)
 
 lib.addCommand('setKeys', {
     help = 'Set keys for a vehicle',
     params = {
-        { name = 'target', help = 'The target player id', type = 'number', optional = false }
+        { name = 'target', help = 'The target player id', type = 'number', optional = true }
     },
     restricted = 'group.admin',
 }, function(source, args, raw)
-    local target = Ox.GetPlayer(args.target)
+    local target = Ox.GetPlayer(args.target or source)
     if target == nil then
         error('player ' .. args.target .. 'not found', 1)
         return

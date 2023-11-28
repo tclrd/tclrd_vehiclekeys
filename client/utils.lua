@@ -28,16 +28,21 @@ AddEventHandler('ox:playerLoaded', function(data)
     Entering:Listener()
 end)
 
-
 AddEventHandler('ox:playerLogout', function(source, userid, charid)
     Entering.Listening = false
 end)
 
 ---@param coords vector3
-lib.callback.register('vehicle_keys:getClosestVehicle', function(coords)
+lib.callback.register('vehicle_keys:getClosestVehicle', function(coords, maxDistance, includePlayerVehicle)
     if coords == nil then return false end
-    local closestVehicle = lib.getClosestVehicle(coords, 5.0, true)
+    local closestVehicle = lib.getClosestVehicle(coords, maxDistance or 5.0, includePlayerVehicle or true)
     if closestVehicle == nil then return false end
     local vehNet = VehToNet(closestVehicle)
     return vehNet
+end)
+
+lib.callback.register('vehicle_keys:getClosestPlayer', function(coords, maxDistance)
+    local playerId = lib.getClosestPlayer(coords, maxDistance, false)
+    if playerId == nil then return nil end
+    return GetPlayerServerId(playerId)
 end)

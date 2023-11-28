@@ -36,17 +36,6 @@ end)
 --     end
 -- end
 
--- lib.addKeybind({
---     name = 'toggleengine',
---     description = 'Toggle vehicle engine',
---     defaultKey = 'K',
---     onPressed = function(self)
---         toggleEngine()
---     end,
---     onReleased = function(self)
---     end,
--- })
-
 
 ---Applys audio and visual effects to the vehicle lock toggle
 ---@param vehicle number
@@ -60,9 +49,9 @@ function Keys:LockingEffect(vehicle)
 
     lib.requestAnimDict("anim@mp_player_intmenu@key_fob@")
     print('sound', sound)
-    lib.waitFor(function()
-        return RequestScriptAudioBank('audiodirectory/custom_sounds', false)
-    end, 'soundbank not loaded', 1000)
+lib.waitFor(function()
+    return RequestScriptAudioBank('audiodirectory/custom_sounds', false)
+end, 'soundbank not loaded', 1000)
 
     local soundId = GetSoundId()
     PlaySoundFromEntity(
@@ -211,7 +200,6 @@ AddStateBagChangeHandler('locked', nil, function(bagName, key, value, _unused, r
     if GetVehicleDoorLockStatus(vehicle) == 2 and value == true then return end
     if GetVehicleDoorLockStatus(vehicle) == 1 and value == false then return end
 
-
     lib.waitFor(function()
         Wait(1)
         return NetworkGetEntityOwner(vehicle) == cache.playerId
@@ -222,10 +210,11 @@ AddStateBagChangeHandler('locked', nil, function(bagName, key, value, _unused, r
     if value then
         SetVehicleDoorsLocked(vehicle, 2)
     else
-        SetVehicleDoorsLocked(vehicle, 1)
+        CreateThread(function()
+            while GetVehiclePedIsEntering(cache.ped) == vehicle do Wait(10) end
+            SetVehicleDoorsLocked(vehicle, 1)
+        end)
     end
-
-    -- Keys:LockingEffect(value, vehicle)
 end)
 
 -- AddStateBagChangeHandler('engine', nil, function(bagName, key, value, _unused, replicated)
